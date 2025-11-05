@@ -1,0 +1,270 @@
+Fedena School Management System — Backend Deployment (Multi-Service Architecture)
+
+📘 Project Overview
+
+This project implements the backend for the Fedena School Management System using a multi-service architecture.
+The system consists of three independent backend services that work together to manage different modules such as authentication, academics, and administration.
+
+This modular structure improves scalability, maintainability, and deployment flexibility.
+
+⸻
+
+🧩 System Architecture
+
+🔹 Backend Services
+
+Service Name	Description
+Auth Service	Handles user authentication, login, and JWT token generation.
+Student Service	Manages student data, attendance, and examination records.
+Admin Service	Manages staff records, classes, subjects, fees, and system-level configurations.
+
+Each service runs independently and communicates via REST APIs or internal API calls.
+
+⸻
+
+🏗 Tech Stack
+
+Component	Technology
+Language / Framework	Node.js (Express.js)
+Database	PostgreSQL (separate DBs for each service or shared schema)
+Authentication	JWT-based authentication
+Deployment Environment	Ubuntu / AWS EC2 / Docker
+Version Control	Git & GitHub
+Process Manager	PM2
+Reverse Proxy (optional)	Nginx
+
+
+⸻
+
+⚙ Folder Structure
+
+fedena-backend/
+│
+├── auth-service/
+│   ├── src/
+│   ├── .env
+│   ├── package.json
+│   └── server.js
+│
+├── student-service/
+│   ├── src/
+│   ├── .env
+│   ├── package.json
+│   └── server.js
+│
+├── admin-service/
+│   ├── src/
+│   ├── .env
+│   ├── package.json
+│   └── server.js
+│
+├── docker-compose.yml   # optional for containerized deployment
+└── README.md
+
+
+⸻
+
+🚀 Deployment Guide
+
+🧩 1. Clone the Repository
+
+git clone https://github.com/yourusername/fedena-backend.git
+cd fedena-backend
+
+
+⸻
+
+⚙ 2. Install Dependencies for Each Service
+
+cd auth-service && npm install
+cd ../student-service && npm install
+cd ../admin-service && npm install
+
+
+⸻
+
+🔧 3. Environment Configuration
+
+Each service has its own .env file.
+
+Example: auth-service/.env
+
+PORT=5001
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=auth_user
+DB_PASS=auth_pass
+DB_NAME=auth_db
+JWT_SECRET=auth_secret_key
+
+Example: student-service/.env
+
+PORT=5002
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=student_user
+DB_PASS=student_pass
+DB_NAME=student_db
+AUTH_SERVICE_URL=http://localhost:5001
+
+Example: admin-service/.env
+
+PORT=5003
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=admin_user
+DB_PASS=admin_pass
+DB_NAME=admin_db
+AUTH_SERVICE_URL=http://localhost:5001
+
+
+⸻
+
+🗃 4. Database Setup
+
+Each service uses its own PostgreSQL database.
+
+psql -U postgres
+CREATE DATABASE auth_db;
+CREATE DATABASE student_db;
+CREATE DATABASE admin_db;
+\q
+
+Run migrations if applicable:
+
+npm run migrate
+
+
+⸻
+
+▶ 5. Run Each Service
+
+# In separate terminals
+cd auth-service && npm start
+cd student-service && npm start
+cd admin-service && npm start
+
+
+⸻
+
+☁ 6. Deploying on Ubuntu / AWS EC2
+
+Step 1: SSH into your server
+
+ssh ubuntu@your-server-ip
+
+Step 2: Install dependencies
+
+sudo apt update
+sudo apt install nodejs npm git postgresql -y
+
+Step 3: Clone project
+
+git clone https://github.com/yourusername/fedena-backend.git
+cd fedena-backend
+
+Step 4: Install & setup each service
+Repeat for all 3 services:
+
+cd auth-service && npm install
+# add .env file
+pm2 start server.js --name auth-service
+
+cd ../student-service && npm install
+# add .env file
+pm2 start server.js --name student-service
+
+cd ../admin-service && npm install
+# add .env file
+pm2 start server.js --name admin-service
+
+Step 5: Save PM2 setup
+
+pm2 save
+pm2 startup
+
+
+⸻
+
+🌐 7. (Optional) Configure Nginx Reverse Proxy
+
+Example config (/etc/nginx/sites-available/fedena):
+
+server {
+    listen 80;
+    server_name your-server-ip;
+
+    location /auth/ {
+        proxy_pass http://localhost:5001/;
+    }
+
+    location /students/ {
+        proxy_pass http://localhost:5002/;
+    }
+
+    location /admin/ {
+        proxy_pass http://localhost:5003/;
+    }
+}
+
+Enable and restart Nginx:
+
+sudo ln -s /etc/nginx/sites-available/fedena /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl restart nginx
+
+Now your APIs are accessible as:
+	•	http://your-server-ip/auth/
+	•	http://your-server-ip/students/
+	•	http://your-server-ip/admin/
+
+⸻
+
+🧪 Testing the APIs
+
+Use Postman or cURL to verify:
+	•	POST /auth/login
+	•	GET /students/list
+	•	POST /admin/addTeacher
+
+⸻
+
+📦 Docker Deployment (Optional)
+
+If you’re using Docker, create a docker-compose.yml file:
+
+version: '3'
+services:
+  auth-service:
+    build: ./auth-service
+    ports:
+      - "5001:5001"
+    env_file:
+      - ./auth-service/.env
+
+  student-service:
+    build: ./student-service
+    ports:
+      - "5002:5002"
+    env_file:
+      - ./student-service/.env
+
+  admin-service:
+    build: ./admin-service
+    ports:
+      - "5003:5003"
+    env_file:
+      - ./admin-service/.env
+
+Run:
+
+docker-compose up -d
+
+
+
+
+💡 Future Enhancements
+	•	Centralized logging (e.g., ELK Stack)
+	•	Service registry (e.g., Consul / Eureka)
+	•	Load balancing and API gateway (e.g., Nginx or Kong)
+	•	CI/CD pipeline for automated deployment
